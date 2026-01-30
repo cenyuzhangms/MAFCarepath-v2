@@ -1,9 +1,9 @@
-# CarePath Healthcare Lab
+# CarePath - Human-first care at scale
 
-Standalone multi-agent healthcare demo built on the Microsoft Agent Framework.
+Amplifying human-led care with transparent, multi-agent collaboration, built on Foundry Agent and Microsoft Agent Framework.
 
 ## What it is
-CarePath showcases five collaborating agents that route a patient’s intake through triage, drafting orders, coverage verification, and care coordination—while keeping a human-in-the-loop gate for clinical decisions.
+CarePath showcases five collaborating agents that route a patient's intake through triage, drafting orders, coverage verification, and care coordination, while keeping a human-in-the-loop gate for clinical decisions.
 
 ## Screenshot
 ![CarePath UI](ui/carepath-screen.png)
@@ -67,6 +67,7 @@ Create `.env` in `backend/` (copy `.env.sample`):
 ```powershell
 Copy-Item .env.sample .env
 ```
+Use `backend/.env.sample` as the template for your local `.env`.
 
 Update Azure OpenAI values in `.env`, then run:
 ```powershell
@@ -78,9 +79,10 @@ http://127.0.0.1:7000
 
 ## Using the demo
 1) Pick a workflow pattern (Sequential, Fan-out/Fan-in, Handoff).
-2) Enter a patient symptom (e.g., “I have a fever and chills”).
+2) Enter a patient symptom (e.g., "I have a fever and chills").
 3) Watch agent handoffs + artifacts update in real time.
 
 ## Notes
 - The UI expects the backend at http://127.0.0.1:7000.
 - Demo mode uses simulated EHR + payer data; it is not clinical advice.
+- Use `backend/.env.sample` as the template for your local `.env`.
