@@ -1,0 +1,5 @@
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+# Install Microsoft Agent Framework separately (see README)

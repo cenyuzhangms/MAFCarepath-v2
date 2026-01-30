@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CarePath Multi-Agent Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Sora:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/ui/styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <div class="brand">
+          <h1>CarePath</h1>
+          <span class="brand-dot"></span>
+          <span class="brand-subtitle">Human-first care at scale</span>
+        </div>
+        <div class="header-meta">
+          <span class="pill" id="session-pill">Session · --</span>
+          <span class="pill">General Care</span>
+          <span class="pill danger" id="risk-pill">Risk: Pending</span>
+        </div>
+        <div class="header-actions">
+          <button class="ghost" id="about-btn">About</button>
+          <button class="ghost" id="export-btn">Export</button>
+          <button id="new-session" class="primary">New Session</button>
+          <button class="icon" id="share-btn" title="Copy share link">Share</button>
+          <button class="icon" id="notify-btn" title="Toggle notifications">Alerts</button>
+          <button class="icon" id="more-btn" title="More actions">More</button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <aside class="panel sidebar">
+          <div class="search">
+            <input type="text" placeholder="Search" />
+          </div>
+
+          <div class="panel-title">Care Team</div>
+          <div id="agent-list" class="agent-list"></div>
+
+          <div class="panel-title">Live Handoffs</div>
+          <div id="handoff-list" class="handoff-list"></div>
+        </aside>
+
+        <section class="chat">
+          <div class="chat-header">
+            <div>
+              <h2>Patient Interaction</h2>
+              <p>Human-in-the-loop responses, guidance, and escalation status</p>
+            </div>
+            <div class="header-controls">
+              <button class="icon">✎</button>
+            </div>
+          </div>
+          <div class="pattern-switcher">
+            <span class="pattern-label">Orchestration Pattern</span>
+            <div class="pattern-options" id="pattern-options">
+              <button class="pattern-btn" data-pattern="sequential">Sequential</button>
+              <button class="pattern-btn" data-pattern="fanout_fanin">Fan-out / Fan-in</button>
+              <button class="pattern-btn" data-pattern="handoff">Handoff</button>
+            </div>
+          </div>
+          <div class="flow-strip">
+            <div class="flow-strip-header">
+              <span>Workflow</span>
+              <span class="pill subtle">Live routing</span>
+            </div>
+            <div id="flow-strip-track" class="flow-strip-track"></div>
+          </div>
+          <div id="chat-messages" class="chat-messages"></div>
+          <div class="chat-input">
+            <textarea
+              id="chat-input"
+              placeholder="Describe symptoms or request a demo case..."
+              rows="2"
+            ></textarea>
+            <button id="send" class="primary">Send</button>
+          </div>
+        </section>
+
+        <aside class="panel sidebar right">
+          <div class="panel-title">Artifacts & Approvals</div>
+          <div class="tabs">
+            <button class="tab active">Artifacts</button>
+            <button class="tab">Approvals</button>
+          </div>
+
+          <div class="artifact-card empty" id="artifact-empty">
+            <h3>Artifacts will appear here</h3>
+            <p>Draft orders, SBAR notes, and approvals populate as agents work.</p>
+          </div>
+
+          <div class="artifact-card hidden" id="artifact-sbar">
+            <div class="artifact-header">
+              <h3>SBAR Draft</h3>
+              <span class="meta">Diagnostics & Orders · just now</span>
+            </div>
+            <div class="artifact-body">
+              <div class="artifact-row">
+                <span class="badge soft">Situation</span>
+                <span id="risk-summary">Risk level pending</span>
+              </div>
+              <div class="artifact-row">
+                <span class="badge soft">Background</span>
+                <span id="sbar-background">Recent labs & symptoms summarized</span>
+              </div>
+              <div class="artifact-row">
+                <span class="badge soft">Recommendation</span>
+                <span id="sbar-recommendation">Drafted orders + handoff note</span>
+              </div>
+            </div>
+            <div class="artifact-actions">
+              <button class="ghost">EHR</button>
+              <button class="ghost">PDF</button>
+              <button class="ghost">Copy</button>
+            </div>
+          </div>
+
+          <div class="artifact-card hidden" id="artifact-orders">
+            <div class="artifact-header">
+              <h3>Draft Orders</h3>
+              <span class="meta">Target turnaround · 30-60 min</span>
+            </div>
+            <div class="artifact-list" id="order-list">
+              <div class="artifact-item">
+                <span>Complete Blood Count</span>
+                <span class="meta">30-60 min</span>
+              </div>
+              <div class="artifact-item">
+                <span>Comprehensive Metabolic Panel</span>
+                <span class="meta">30-60 min</span>
+              </div>
+              <div class="artifact-item">
+                <span>Blood Culture</span>
+                <span class="meta">30-60 min</span>
+              </div>
+              <div class="artifact-item">
+                <span>Urinalysis</span>
+                <span class="meta">30-60 min</span>
+              </div>
+              <div class="artifact-item">
+                <span>Chest X-Ray</span>
+                <span class="meta">30-60 min</span>
+              </div>
+            </div>
+            <div class="artifact-actions">
+              <button class="ghost">View details</button>
+            </div>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="app-footer">
+        <div class="footer-brand">
+          <div class="footer-text">
+            <p>Amplifying human-led care with transparent, multi-agent collaboration.</p>
+            <a href="#" id="about-footer-link" class="footer-link">About</a>
+          </div>
+        </div>
+      </footer>
+
+      <div id="about-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="about-title">
+        <div class="modal-backdrop"></div>
+        <div class="modal-card">
+          <div class="modal-image">
+            <img src="/ui/carepath-logo.png" alt="CarePath" />
+          </div>
+          <div class="modal-content">
+            <h3 id="about-title">CarePath</h3>
+            <p>
+              We turn cutting-edge AI into real-world care coordination. CarePath is designed to make
+              multi-agent workflows visible, safe, and collaborative for every healthcare team.
+            </p>
+            <div class="modal-tags">
+              <span class="tag">Human-in-the-loop</span>
+              <span class="tag">Multi-agent orchestration</span>
+              <span class="tag">Enterprise-ready</span>
+              <span class="tag">Patient outcomes</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="toast" class="toast hidden"></div>
+    </div>
+
+    <script src="/ui/app.js"></script>
+  </body>
+</html>
