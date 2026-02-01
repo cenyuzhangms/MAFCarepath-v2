@@ -1,3 +1,12 @@
+/* ─── Agent role icons (inline SVG) ─── */
+const agentIcons = {
+  patient_companion: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  clinical_triage: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 105 2H4a2 2 0 00-2 2v5a2 2 0 002 2h1a2 2 0 002-2V4a2 2 0 00-2-2"/><path d="M8 15v1a6 6 0 006 6 6 6 0 006-6v-4"/><line x1="2" y1="12" x2="22" y2="12"/></svg>`,
+  diagnostics_orders: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.527a2 2 0 01-.211.896L4.72 20.55a1 1 0 00.9 1.45h12.76a1 1 0 00.9-1.45l-5.069-10.127A2 2 0 0114 9.527V2"/><path d="M8.5 2h7"/></svg>`,
+  coverage_prior_auth: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+  care_coordination: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+};
+
 const workflowStages = [
   {
     id: "patient_companion",
@@ -71,13 +80,192 @@ const aboutFooterLink = document.getElementById("about-footer-link");
 const aboutModal = document.getElementById("about-modal");
 const aboutBackdrop = document.querySelector("#about-modal .modal-backdrop");
 const flowStripContainer = document.querySelector(".flow-strip");
+const themeToggle = document.getElementById("theme-toggle");
+const fontToggle = document.getElementById("font-toggle");
+const scrollToBottomBtn = document.getElementById("scroll-to-bottom");
+const mobileTabBar = document.getElementById("mobile-tab-bar");
+const sidebarLeft = document.getElementById("sidebar-left");
+const sidebarRight = document.getElementById("sidebar-right");
+const sendHint = document.getElementById("send-hint");
+const sendHintSignIn = document.getElementById("send-hint-signin");
+const sendHintCreate = document.getElementById("send-hint-create");
+const sessionList = document.getElementById("session-list");
+const sessionModal = document.getElementById("session-modal");
+const sessionModalList = document.getElementById("session-modal-list");
+const sessionNewBtn = document.getElementById("session-new-btn");
+const sessionResumeBtn = document.getElementById("session-resume-btn");
+// memory summary panel removed; use drawer only
+const memoryPill = document.getElementById("memory-pill");
+const memoryToggle = document.getElementById("memory-toggle");
+const memoryDrawer = document.getElementById("memory-drawer");
+const memoryDrawerBody = document.getElementById("memory-drawer-body");
+const memoryClose = document.getElementById("memory-close");
 
 let sessionId = crypto.randomUUID();
 let agentState = {};
 let currentAgents = new Set();
 let notificationsEnabled = true;
+let toastTimer = null;
 const conversationLog = [];
+let lastMobileTab = "chat";
+let suppressPersist = false;
 
+/* ─── Dark Mode ─── */
+function initTheme() {
+  const saved = localStorage.getItem("carepath-theme");
+  if (saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+    document.documentElement.setAttribute("data-theme", "dark");
+  }
+}
+
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  if (isDark) {
+    document.documentElement.removeAttribute("data-theme");
+    localStorage.setItem("carepath-theme", "light");
+  } else {
+    document.documentElement.setAttribute("data-theme", "dark");
+    localStorage.setItem("carepath-theme", "dark");
+  }
+}
+
+initTheme();
+themeToggle?.addEventListener("click", toggleTheme);
+
+function initFontSize() {
+  const saved = localStorage.getItem("carepath-font");
+  if (saved === "large") {
+    document.documentElement.setAttribute("data-font", "large");
+    fontToggle?.classList.add("active");
+  }
+}
+
+function toggleFontSize() {
+  const isLarge = document.documentElement.getAttribute("data-font") === "large";
+  if (isLarge) {
+    document.documentElement.removeAttribute("data-font");
+    localStorage.setItem("carepath-font", "normal");
+    fontToggle?.classList.remove("active");
+  } else {
+    document.documentElement.setAttribute("data-font", "large");
+    localStorage.setItem("carepath-font", "large");
+    fontToggle?.classList.add("active");
+  }
+}
+
+initFontSize();
+fontToggle?.addEventListener("click", toggleFontSize);
+
+/* ─── Mobile Tab Navigation ─── */
+function setMobileTab(tab) {
+  if (!mobileTabBar) return;
+  lastMobileTab = tab;
+  mobileTabBar.querySelectorAll("button").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.tab === tab);
+  });
+  if (tab === "chat") {
+    sidebarLeft?.classList.add("mobile-hidden");
+    sidebarRight?.classList.add("mobile-hidden");
+  } else if (tab === "team") {
+    sidebarLeft?.classList.remove("mobile-hidden");
+    sidebarRight?.classList.add("mobile-hidden");
+  } else if (tab === "artifacts") {
+    sidebarLeft?.classList.add("mobile-hidden");
+    sidebarRight?.classList.remove("mobile-hidden");
+  }
+}
+
+mobileTabBar?.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-tab]");
+  if (btn) setMobileTab(btn.dataset.tab);
+});
+
+// Default: hide sidebars on mobile
+if (window.innerWidth <= 1000) {
+  setMobileTab("chat");
+}
+window.addEventListener("resize", () => {
+  if (window.innerWidth <= 1000) {
+    setMobileTab(lastMobileTab);
+  } else {
+    sidebarLeft?.classList.remove("mobile-hidden");
+    sidebarRight?.classList.remove("mobile-hidden");
+  }
+});
+
+/* ─── Timestamp helper ─── */
+function formatTimestamp() {
+  const now = new Date();
+  return now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+/* ─── Typing Indicator ─── */
+let typingEl = null;
+
+function showTypingIndicator(agentName, count = 1) {
+  removeTypingIndicator();
+  typingEl = document.createElement("div");
+  typingEl.className = "typing-indicator";
+  const label =
+    count > 1 ? "Multiple agents are processing..." : `${agentName || "Agent"} is processing...`;
+  typingEl.innerHTML = `
+    <div class="typing-dots">
+      <span class="typing-dot"></span>
+      <span class="typing-dot"></span>
+      <span class="typing-dot"></span>
+    </div>
+    <span class="typing-label">${label}</span>
+  `;
+  chatMessages.appendChild(typingEl);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function removeTypingIndicator() {
+  if (typingEl && typingEl.parentNode) {
+    typingEl.parentNode.removeChild(typingEl);
+    typingEl = null;
+  }
+}
+
+/* ─── Scroll-to-bottom ─── */
+function updateScrollButton() {
+  if (!chatMessages || !scrollToBottomBtn) return;
+  const threshold = 100;
+  const isScrolledUp = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight > threshold;
+  scrollToBottomBtn.classList.toggle("visible", isScrolledUp);
+}
+
+chatMessages?.addEventListener("scroll", updateScrollButton);
+scrollToBottomBtn?.addEventListener("click", () => {
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+});
+
+/* ─── Skeleton Loader ─── */
+function showSkeleton() {
+  if (chatMessages.querySelector(".message") || chatMessages.querySelector(".assistant-structured")) {
+    return;
+  }
+  if (chatMessages.querySelector(".skeleton-card")) {
+    return;
+  }
+  chatMessages.insertAdjacentHTML(
+    "afterbegin",
+    `
+    <div class="skeleton-card skeleton">
+      <div class="skeleton-line long"></div>
+      <div class="skeleton-line medium"></div>
+      <div class="skeleton-line short"></div>
+    </div>
+  `
+  );
+}
+
+function removeSkeleton() {
+  const skeleton = chatMessages.querySelector(".skeleton-card");
+  if (skeleton) skeleton.remove();
+}
+
+/* ─── Render Stages ─── */
 function renderStages() {
   agentList.innerHTML = "";
   flowStrip.innerHTML = "";
@@ -87,13 +275,21 @@ function renderStages() {
 
     const card = document.createElement("div");
     card.className = "agent-card";
+    card.setAttribute("role", "listitem");
 
     const avatar = document.createElement("div");
     avatar.className = "agent-avatar";
-    const avatarImg = document.createElement("img");
-    avatarImg.src = stage.avatar;
-    avatarImg.alt = stage.label;
-    avatar.appendChild(avatarImg);
+    avatar.style.background = `${stage.color}18`;
+    avatar.style.color = stage.color;
+    // Use role-specific SVG icon instead of generic avatar
+    if (agentIcons[stage.id]) {
+      avatar.innerHTML = agentIcons[stage.id];
+    } else {
+      const avatarImg = document.createElement("img");
+      avatarImg.src = stage.avatar;
+      avatarImg.alt = stage.label;
+      avatar.appendChild(avatarImg);
+    }
 
     const meta = document.createElement("div");
     meta.className = "agent-meta";
@@ -107,12 +303,12 @@ function renderStages() {
     const statusEl = document.createElement("div");
     statusEl.className = `agent-status ${status}`;
     statusEl.textContent = status === "active" ? "Running" : status === "complete" ? "Complete" : "Idle";
+    statusEl.setAttribute("aria-label", `${stage.label} status: ${statusEl.textContent}`);
 
     card.appendChild(avatar);
     card.appendChild(meta);
     card.appendChild(statusEl);
     agentList.appendChild(card);
-
   });
 
   renderFlowDiagram(getSelectedPattern());
@@ -282,25 +478,44 @@ function appendTimeline(kind, content) {
   const item = document.createElement("div");
   item.className = "handoff-item";
   const meta = document.createElement("small");
-  meta.textContent = kind;
+  meta.textContent = `${kind} · ${formatTimestamp()}`;
   const body = document.createElement("div");
   body.textContent = content;
   item.appendChild(meta);
   item.appendChild(body);
   handoffList.prepend(item);
+  if (!suppressPersist) {
+    persistEvent("handoff", { kind, content });
+  }
 }
 
 function appendMessage(role, content) {
+  removeSkeleton();
+  removeTypingIndicator();
+  const shouldStickToBottom =
+    chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight < 120;
   const item = document.createElement("div");
   item.className = `message ${role}`;
   const meta = document.createElement("small");
-  meta.textContent = `${role === "user" ? "You" : role === "error" ? "Error" : "Assistant"}`;
+  const roleLabel = document.createElement("span");
+  roleLabel.textContent = `${role === "user" ? "You" : role === "error" ? "Error" : "Assistant"}`;
+  const timestamp = document.createElement("span");
+  timestamp.className = "message-timestamp";
+  timestamp.textContent = formatTimestamp();
+  meta.appendChild(roleLabel);
+  meta.appendChild(timestamp);
   const body = document.createElement("div");
   body.innerHTML = role === "assistant" ? formatAssistantMessage(content) : formatMessage(content);
   item.appendChild(meta);
   item.appendChild(body);
   chatMessages.appendChild(item);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+  if (shouldStickToBottom) {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+  updateScrollButton();
+  if (!suppressPersist) {
+    persistEvent("message", { role, content });
+  }
 }
 
 function formatMessage(text) {
@@ -373,7 +588,7 @@ function formatAssistantMessage(text) {
     html += `
       <div class="section-card">
         <div class="section-header">
-          <span class="section-icon">${iconMap[section.title] || "✅"}</span>
+          <span class="section-icon">${iconMap[section.title] || "&#10003;"}</span>
           <h4>${section.title}</h4>
         </div>
         ${renderSectionBody(section.body)}
@@ -409,7 +624,7 @@ function renderSectionBody(lines) {
   return `<div class="section-body">${html}</div>`;
 }
 
-function resetSession() {
+async function resetSession() {
   sessionId = crypto.randomUUID();
   agentState = {};
   currentAgents = new Set();
@@ -419,7 +634,18 @@ function resetSession() {
   resetArtifacts();
   updateSessionPill();
   renderStages();
-  connectWebSocket();
+  if (typeof getToken === "function" && getToken()) {
+    const remote = await createRemoteSession();
+    if (remote?.id) {
+      sessionId = remote.id;
+      updateSessionPill();
+    }
+    connectWebSocket();
+  } else {
+    if (typeof setPreviewMode === "function") {
+      setPreviewMode(true);
+    }
+  }
 }
 
 let ws;
@@ -431,21 +657,31 @@ function getSelectedPattern() {
 function setActivePattern(pattern) {
   if (!patternOptions) return;
   patternOptions.querySelectorAll(".pattern-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.pattern === pattern);
+    const isActive = btn.dataset.pattern === pattern;
+    btn.classList.toggle("active", isActive);
+    btn.setAttribute("aria-checked", isActive ? "true" : "false");
   });
 }
 
 function connectWebSocket() {
+  if (typeof getToken === "function" && !getToken()) {
+    return;
+  }
   if (ws) ws.close();
+  showSkeleton();
   ws = new WebSocket(wsUrl);
   ws.onopen = () => {
-    ws.send(JSON.stringify({ session_id: sessionId, access_token: null, pattern: getSelectedPattern() }));
+    removeSkeleton();
+    ws.send(JSON.stringify({ session_id: sessionId, access_token: getToken(), pattern: getSelectedPattern() }));
   };
   ws.onmessage = (event) => {
     const payload = JSON.parse(event.data);
     handleEvent(payload);
   };
-  ws.onclose = () => {
+  ws.onclose = (event) => {
+    // Don't reconnect if closed due to auth failure (1008)
+    if (event.code === 1008) return;
+    if (typeof getToken === "function" && !getToken()) return;
     setTimeout(connectWebSocket, 1500);
   };
 }
@@ -461,6 +697,7 @@ function handleEvent(event) {
       if (!agentState[event.agent_id]) {
         agentState[event.agent_id] = { name: event.agent_name || event.agent_id, tokens: [] };
       }
+      showTypingIndicator(event.agent_name || event.agent_id, currentAgents.size);
       renderStages();
       break;
     case "agent_token":
@@ -476,6 +713,13 @@ function handleEvent(event) {
       if (event.agent_id === "diagnostics_orders") {
         updateArtifacts(event.content || "");
       }
+      removeTypingIndicator();
+      // Show typing for next agent if any are still active
+      if (currentAgents.size > 0) {
+        const nextId = [...currentAgents][0];
+        const nextAgent = agentState[nextId];
+        showTypingIndicator(nextAgent?.name || nextId, currentAgents.size);
+      }
       renderStages();
       updateRiskFromText(event.content || "");
       break;
@@ -483,11 +727,17 @@ function handleEvent(event) {
       appendTimeline("tool", `${event.agent_id}: ${event.tool_name}`);
       break;
     case "final_result":
+      removeTypingIndicator();
       if (event.content) appendMessage("assistant", event.content);
       if (event.content) conversationLog.push({ role: "assistant", content: event.content });
       break;
     case "error":
+      removeTypingIndicator();
       if (event.message) appendMessage("error", event.message);
+      break;
+    case "auth_error":
+      removeTypingIndicator();
+      if (typeof handleTokenExpired === "function") handleTokenExpired();
       break;
     default:
       break;
@@ -496,14 +746,27 @@ function handleEvent(event) {
 
 function sendMessage() {
   const text = input.value.trim();
-  if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+  if (typeof getToken === "function" && !getToken()) {
+    if (sendHint) {
+      sendHint.classList.remove("hidden");
+    }
+    return;
+  }
+  if (!text) return;
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    connectWebSocket();
+    if (typeof showToast === "function") {
+      showToast("Connecting to session. Please try again.", { icon: "🔄" });
+    }
+    return;
+  }
   appendMessage("user", text);
   conversationLog.push({ role: "user", content: text });
   ws.send(
     JSON.stringify({
       session_id: sessionId,
       prompt: text,
-      access_token: null,
+      access_token: getToken(),
       pattern: getSelectedPattern(),
     })
   );
@@ -512,6 +775,131 @@ function sendMessage() {
 
 function updateSessionPill() {
   sessionPill.textContent = `Session · ${sessionId.slice(0, 8)}`;
+}
+
+function renderSessionList(items) {
+  if (!sessionList) return;
+  sessionList.innerHTML = "";
+  if (!items || items.length === 0) {
+    sessionList.innerHTML = '<div class="session-item"><small>No sessions yet.</small></div>';
+    return;
+  }
+  items.forEach((s, idx) => {
+    const el = document.createElement("div");
+    el.className = "session-item";
+    el.innerHTML = `
+      <strong>${s.title || "Session"} · ${s.id.slice(0, 6)}</strong>
+      <small>${s.updated_at || ""}</small>
+      <div class="session-preview">${s.summary || "No summary yet."}</div>
+    `;
+    el.addEventListener("click", () => loadSessionById(s.id));
+    sessionList.appendChild(el);
+  });
+}
+
+async function fetchSessions() {
+  if (typeof getToken !== "function" || !getToken()) return [];
+  try {
+    const res = await fetch("/api/sessions", {
+      headers: { Authorization: "Bearer " + getToken() },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    renderSessionList(data.sessions || []);
+    showSessionModal(data.sessions || []);
+    return data.sessions || [];
+  } catch {
+    return [];
+  }
+}
+
+async function loadSessionById(id) {
+  if (typeof getToken !== "function" || !getToken()) return;
+  try {
+    const res = await fetch(`/api/sessions/${id}`, {
+      headers: { Authorization: "Bearer " + getToken() },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (typeof hydrateSession === "function") {
+        hydrateSession(data);
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
+
+async function createRemoteSession() {
+  if (typeof getToken !== "function" || !getToken()) return null;
+  try {
+    const res = await fetch("/api/sessions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + getToken(),
+      },
+      body: JSON.stringify({ title: "" }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function persistEvent(eventType, payload) {
+  if (typeof getToken !== "function" || !getToken()) return;
+  try {
+    await fetch(`/api/sessions/${sessionId}/events`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + getToken(),
+      },
+      body: JSON.stringify({ event_type: eventType, payload }),
+    });
+  } catch {
+    // ignore persistence failures in demo
+  }
+}
+
+function hydrateSession(data) {
+  if (!data || !data.session) return;
+  suppressPersist = true;
+  sessionId = data.session.id;
+  agentState = {};
+  currentAgents = new Set();
+  handoffList.innerHTML = "";
+  chatMessages.innerHTML = "";
+  conversationLog.length = 0;
+  resetArtifacts();
+  updateSessionPill();
+
+  (data.messages || []).forEach((msg) => {
+    appendMessage(msg.role || "assistant", msg.content || "");
+    conversationLog.push({ role: msg.role || "assistant", content: msg.content || "" });
+  });
+
+  (data.handoffs || []).forEach((item) => {
+    appendTimeline(item.kind || "info", item.content || "");
+  });
+
+  (data.artifacts || []).forEach((art) => {
+    try {
+      const parsed = JSON.parse(art.payload_json || "{}");
+      updateArtifacts(JSON.stringify(parsed));
+    } catch {
+      // ignore
+    }
+  });
+
+  renderStages();
+  if (memoryDrawerBody && data.session.summary) {
+    memoryDrawerBody.textContent = data.session.summary;
+    memoryPill?.classList.remove("hidden");
+  }
+  suppressPersist = false;
 }
 
 function updateRiskFromText(text) {
@@ -565,6 +953,9 @@ function updateArtifacts(messageText) {
       orderList.appendChild(row);
     });
   }
+  if (!suppressPersist) {
+    persistEvent("artifact", { artifact_type: "diagnostics", data: json });
+  }
 }
 
 function extractJson(text) {
@@ -595,12 +986,66 @@ function resetArtifacts() {
   if (riskSummary) riskSummary.textContent = "Risk level pending";
 }
 
-function showToast(message) {
+/* ─── Toast (improved with persistent option) ─── */
+function showToast(message, { icon = "", persistent = false } = {}) {
   if (!toast) return;
-  toast.textContent = message;
+  if (toastTimer) clearTimeout(toastTimer);
+
+  let html = "";
+  if (icon) html += `<span class="toast-icon">${icon}</span>`;
+  html += `<span>${message}</span>`;
+  if (persistent) {
+    html += `<button class="toast-close" aria-label="Dismiss">&times;</button>`;
+    toast.classList.add("persistent");
+  } else {
+    toast.classList.remove("persistent");
+  }
+
+  toast.innerHTML = html;
   toast.classList.remove("hidden");
-  setTimeout(() => toast.classList.add("hidden"), 2000);
+
+  if (persistent) {
+    toast.querySelector(".toast-close")?.addEventListener("click", () => {
+      toast.classList.add("hidden");
+    });
+  } else {
+    toastTimer = setTimeout(() => toast.classList.add("hidden"), 2500);
+  }
 }
+
+/* ─── Artifact action buttons with loading/success states ─── */
+document.addEventListener("click", (e) => {
+  const actionBtn = e.target.closest("[data-action]");
+  if (!actionBtn) return;
+
+  const action = actionBtn.dataset.action;
+  const originalText = actionBtn.textContent;
+
+  actionBtn.classList.add("loading");
+
+  setTimeout(() => {
+    actionBtn.classList.remove("loading");
+    actionBtn.classList.add("success");
+    actionBtn.textContent = "Done";
+
+    if (action === "ehr") {
+      showToast("SBAR sent to EHR", { icon: "&#10003;", persistent: true });
+    } else if (action === "pdf") {
+      showToast("PDF exported", { icon: "&#128196;" });
+    } else if (action === "copy") {
+      showToast("Copied to clipboard", { icon: "&#128203;" });
+    } else if (action === "view-details") {
+      showToast("Order details loaded", { icon: "&#128203;" });
+    } else {
+      showToast(`${action} completed`, { icon: "&#10003;" });
+    }
+
+    setTimeout(() => {
+      actionBtn.classList.remove("success");
+      actionBtn.textContent = originalText;
+    }, 1500);
+  }, 800);
+});
 
 exportButton?.addEventListener("click", () => {
   const payload = {
@@ -615,13 +1060,13 @@ exportButton?.addEventListener("click", () => {
   link.download = `carepath-session-${sessionId.slice(0, 8)}.json`;
   link.click();
   URL.revokeObjectURL(url);
-  showToast("Exported session data");
+  showToast("Exported session data", { icon: "&#128190;" });
 });
 
 shareButton?.addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText(window.location.href);
-    showToast("Share link copied");
+    showToast("Share link copied", { icon: "&#128279;" });
   } catch (err) {
     showToast("Unable to copy link");
   }
@@ -630,7 +1075,7 @@ shareButton?.addEventListener("click", async () => {
 notifyButton?.addEventListener("click", () => {
   notificationsEnabled = !notificationsEnabled;
   notifyButton.classList.toggle("active", notificationsEnabled);
-  showToast(notificationsEnabled ? "Notifications on" : "Notifications off");
+  showToast(notificationsEnabled ? "Notifications on" : "Notifications off", { icon: notificationsEnabled ? "&#128276;" : "&#128277;" });
 });
 
 moreButton?.addEventListener("click", () => {
@@ -664,14 +1109,47 @@ input.addEventListener("keydown", (event) => {
     sendMessage();
   }
 });
-newSessionButton.addEventListener("click", resetSession);
+newSessionButton.addEventListener("click", async () => {
+  await resetSession();
+  if (typeof showToast === "function") {
+    showToast("Started a fresh session", { icon: "✨" });
+  }
+});
 patternOptions?.addEventListener("click", (event) => {
   const button = event.target.closest(".pattern-btn");
   if (!button) return;
   const pattern = button.dataset.pattern;
   setActivePattern(pattern);
   renderStages();
-  showToast(`Pattern set to ${button.textContent}`);
+  showToast(`Pattern set to ${button.textContent.trim()}`, { icon: "&#9881;" });
+});
+
+sendHintSignIn?.addEventListener("click", () => {
+  if (sendHint) sendHint.classList.add("hidden");
+  if (typeof openAuthModal === "function") openAuthModal("login");
+});
+
+sendHintCreate?.addEventListener("click", () => {
+  if (sendHint) sendHint.classList.add("hidden");
+  if (typeof openAuthModal === "function") openAuthModal("register");
+});
+
+document.addEventListener("click", (event) => {
+  if (!sendHint || sendHint.classList.contains("hidden")) return;
+  const isInside = sendHint.contains(event.target) || sendButton.contains(event.target);
+  if (!isInside) {
+    sendHint.classList.add("hidden");
+  }
+});
+
+memoryToggle?.addEventListener("click", () => {
+  memoryDrawer?.classList.remove("hidden");
+});
+memoryClose?.addEventListener("click", () => {
+  memoryDrawer?.classList.add("hidden");
+});
+document.querySelector("#memory-drawer .drawer-backdrop")?.addEventListener("click", () => {
+  memoryDrawer?.classList.add("hidden");
 });
 
 let lastScrollTop = 0;
@@ -687,8 +1165,66 @@ chatMessages?.addEventListener("scroll", () => {
   lastScrollTop = current;
 });
 
-setActivePattern("sequential");
-updateSessionPill();
-resetArtifacts();
-renderStages();
-connectWebSocket();
+/* ─── App Init (called by auth.js after login) ─── */
+function initApp() {
+  setActivePattern("sequential");
+  resetSession();
+  fetchSessions();
+}
+
+// Allow auth module to reset UI on logout
+window.resetSession = resetSession;
+window.hydrateSession = hydrateSession;
+window.fetchSessions = fetchSessions;
+function showSessionModal(sessions) {
+  if (!sessionModal || !sessionModalList) return;
+  sessionModalList.innerHTML = "";
+  if (sessions && sessions.length) {
+    sessions.slice(0, 5).forEach((s) => {
+      const el = document.createElement("div");
+      el.className = "session-item";
+      el.innerHTML = `<strong>${s.title || "Session"} · ${s.id.slice(0, 6)}</strong><small>${s.updated_at || ""}</small>`;
+      el.addEventListener("click", () => {
+        if (typeof hydrateSession === "function") {
+          fetch(`/api/sessions/${s.id}`, {
+            headers: { Authorization: "Bearer " + getToken() },
+          })
+            .then((r) => r.json())
+            .then((data) => hydrateSession(data));
+        }
+        sessionModal.classList.add("hidden");
+      });
+      sessionModalList.appendChild(el);
+    });
+  } else {
+    sessionModalList.innerHTML = '<div class="session-item"><small>No sessions yet.</small></div>';
+  }
+  sessionModal.classList.remove("hidden");
+}
+
+sessionNewBtn?.addEventListener("click", async () => {
+  if (sessionModal) sessionModal.classList.add("hidden");
+  await resetSession();
+  fetchSessions();
+});
+
+sessionResumeBtn?.addEventListener("click", async () => {
+  if (sessionModal) sessionModal.classList.add("hidden");
+  try {
+    const res = await fetch("/api/sessions/latest", {
+      headers: { Authorization: "Bearer " + getToken() },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      hydrateSession(data);
+    } else {
+      await resetSession();
+    }
+  } catch {
+    await resetSession();
+  }
+});
+
+document.querySelector("#session-modal .modal-backdrop")?.addEventListener("click", () => {
+  sessionModal?.classList.add("hidden");
+});

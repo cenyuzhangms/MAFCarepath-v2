@@ -2,4 +2,6 @@ fastapi
 uvicorn[standard]
 pydantic
 python-dotenv
+python-jose[cryptography]
+bcrypt
 # Install Microsoft Agent Framework separately (see README)

@@ -8,6 +8,15 @@ CarePath showcases five collaborating agents that route a patient's intake throu
 ## Screenshot
 ![CarePath UI](ui/carepath-screen.png)
 
+## Key capabilities
+- Preview mode with synthetic data (no login required).
+- User registration + login with JWT auth.
+- Session persistence per user (SQLite) with auto-resume.
+- Live orchestration patterns (Sequential, Fan-out/Fan-in, Handoff).
+- Artifact panel updates in real time.
+- Memory summary drawer for session context.
+- Dark mode toggle + large-text toggle (A+).
+
 ## Agents
 1. Patient Companion - Intake, education, check-ins (no clinical disposition).
 2. Clinical Triage - Proposes urgency + disposition (requires RN/MD signoff).
@@ -49,6 +58,7 @@ Patient -> Triage -> Diagnostics -> Coverage -> Coordination
 ## Requirements
 - Python 3.10+
 - Microsoft Agent Framework (`agent_framework`)
+- SQLite (file-based, included with Python)
 
 ## Setup (Windows PowerShell)
 ```powershell
@@ -76,6 +86,21 @@ python app.py
 
 Open the UI:
 http://127.0.0.1:7000
+
+## Auth + preview mode
+- Preview mode lets anyone explore synthetic data without logging in.
+- Sign in to run agents, save sessions, and export artifacts.
+- New Session is disabled in preview mode and enabled after login.
+
+## Session management + memory
+- Sessions are persisted per user in SQLite and auto-resume after login.
+- Session list shows preview text (from summary) in the left panel.
+- Memory drawer (🧠) shows the rolling session summary.
+- Summary is lightweight (recent message digest) and updates on each message.
+
+## UI controls
+- Dark mode toggle (🌙) in the header.
+- Large text toggle (A+) for patient-friendly readability.
 
 ## Using the demo
 1) Pick a workflow pattern (Sequential, Fan-out/Fan-in, Handoff).

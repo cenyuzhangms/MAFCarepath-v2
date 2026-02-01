@@ -10,10 +10,86 @@
       href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Sora:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/ui/styles.css" />
+    <link rel="stylesheet" href="/ui/styles.css?v=20260131-8" />
   </head>
   <body>
-    <div class="app">
+
+    <!-- ─── Auth Screen ─── -->
+      <div id="auth-screen" class="auth-screen hidden">
+      <div class="auth-card">
+        <div class="auth-hero">
+          <div class="auth-hero-graphic">
+            <svg viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+              <defs>
+                <linearGradient id="authGrad" x1="0" x2="1" y1="0" y2="1">
+                  <stop offset="0%" stop-color="#60a5fa" />
+                  <stop offset="100%" stop-color="#34d399" />
+                </linearGradient>
+              </defs>
+              <circle cx="60" cy="60" r="52" fill="url(#authGrad)" opacity="0.18" />
+              <circle cx="44" cy="50" r="16" fill="#60a5fa" />
+              <circle cx="76" cy="46" r="14" fill="#93c5fd" />
+              <rect x="28" y="68" width="40" height="26" rx="13" fill="#60a5fa" />
+              <rect x="60" y="66" width="36" height="24" rx="12" fill="#93c5fd" />
+              <path d="M86 30l6 6-6 6-6-6z" fill="#34d399" opacity="0.7" />
+            </svg>
+          </div>
+          <div class="auth-hero-text">
+            <h1>CarePath</h1>
+            <p>Human-first care at scale</p>
+          </div>
+        </div>
+
+        <div class="auth-tabs" role="tablist">
+          <button class="auth-tab active" data-tab="login" role="tab" aria-selected="true">Sign In</button>
+          <button class="auth-tab" data-tab="register" role="tab" aria-selected="false">Register</button>
+        </div>
+
+        <form id="login-form" autocomplete="on">
+          <div class="auth-field">
+            <label for="login-email">Email</label>
+            <input id="login-email" type="email" placeholder="you@example.com" required autocomplete="email" />
+          </div>
+          <div class="auth-field">
+            <label for="login-password">Password</label>
+            <input id="login-password" type="password" placeholder="Enter password" required autocomplete="current-password" />
+          </div>
+          <div class="auth-field-row">
+            <a class="auth-link-inline" href="#" tabindex="-1">Forgot password?</a>
+          </div>
+          <div id="login-network-note" class="auth-network-note" aria-live="polite"></div>
+          <button type="submit" class="primary auth-submit">Sign In</button>
+          <div class="auth-switch">
+            <span>Don't have an account?</span>
+            <button type="button" class="auth-link" data-switch="register">Register</button>
+          </div>
+        </form>
+
+        <form id="register-form" class="hidden" autocomplete="on">
+          <div class="auth-field">
+            <label for="reg-name">Display Name <span class="auth-optional">(optional)</span></label>
+            <input id="reg-name" type="text" placeholder="Your name" autocomplete="name" />
+          </div>
+          <div class="auth-field">
+            <label for="reg-email">Email</label>
+            <input id="reg-email" type="email" placeholder="you@example.com" required autocomplete="email" />
+          </div>
+          <div class="auth-field">
+            <label for="reg-password">Password</label>
+            <input id="reg-password" type="password" placeholder="Min. 8 characters" required minlength="8" autocomplete="new-password" />
+            <span class="auth-hint">Must be at least 8 characters</span>
+          </div>
+          <button type="submit" class="primary auth-submit">Create Account</button>
+          <div class="auth-switch">
+            <span>Already have an account?</span>
+            <button type="button" class="auth-link" data-switch="login">Sign In</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ─── Main App (hidden until authenticated) ─── -->
+    <div id="app-screen" class="app hidden">
       <header class="app-header">
         <div class="brand">
           <h1>CarePath</h1>
@@ -23,29 +99,53 @@
         <div class="header-meta">
           <span class="pill" id="session-pill">Session · --</span>
           <span class="pill">General Care</span>
+          <span class="pill subtle hidden" id="preview-pill">Preview Mode</span>
+          <span class="pill subtle hidden" id="memory-pill">Memory updated</span>
           <span class="pill danger" id="risk-pill">Risk: Pending</span>
         </div>
         <div class="header-actions">
-          <button class="ghost" id="about-btn">About</button>
-          <button class="ghost" id="export-btn">Export</button>
-          <button id="new-session" class="primary">New Session</button>
-          <button class="icon" id="share-btn" title="Copy share link">Share</button>
-          <button class="icon" id="notify-btn" title="Toggle notifications">Alerts</button>
-          <button class="icon" id="more-btn" title="More actions">More</button>
+          <span class="pill user-pill hidden" id="user-pill" title="Signed in user">--</span>
+          <button class="ghost" id="font-toggle" aria-label="Toggle large text">A+</button>
+          <button class="theme-toggle" id="theme-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">
+            <span class="icon-moon">&#9790;</span>
+            <span class="icon-sun">&#9728;</span>
+          </button>
+          <button class="ghost" id="settings-btn" aria-label="Settings">⚙ Settings</button>
+          <button class="ghost" id="export-btn" aria-label="Export session data">⬇ Export</button>
+          <button id="new-session" class="primary" aria-label="Start new session">＋ New Session</button>
+          <button class="icon" id="share-btn" title="Copy share link" aria-label="Copy share link">Share</button>
+          <button class="icon" id="notify-btn" title="Toggle notifications" aria-label="Toggle notifications">Alerts</button>
+          <button class="icon hidden" id="logout-btn" title="Sign out" aria-label="Sign out">Logout</button>
         </div>
       </header>
 
+      <div class="preview-banner hidden top-preview" id="preview-banner">
+        <div class="preview-banner-text">
+          <div class="preview-banner-title">
+            <span class="preview-lock">🔒</span>
+            <strong>Preview mode</strong> — exploring a demo case with synthetic data.
+          </div>
+          <span>Sign in to run agents, save sessions, and export artifacts.</span>
+        </div>
+        <div class="preview-banner-actions">
+          <button class="ghost" id="preview-create-account">Create account</button>
+          <button class="primary" id="preview-sign-in">Sign in</button>
+        </div>
+      </div>
+
       <main class="layout">
-        <aside class="panel sidebar">
+        <aside class="panel sidebar" id="sidebar-left">
           <div class="search">
-            <input type="text" placeholder="Search" />
+            <input type="text" placeholder="Search" aria-label="Search care team" />
           </div>
 
           <div class="panel-title">Care Team</div>
-          <div id="agent-list" class="agent-list"></div>
+          <div id="agent-list" class="agent-list" role="list" aria-label="Care team agents"></div>
 
           <div class="panel-title">Live Handoffs</div>
-          <div id="handoff-list" class="handoff-list"></div>
+          <div id="handoff-list" class="handoff-list" role="log" aria-label="Live handoff events"></div>
+          <div class="panel-title">Sessions</div>
+          <div id="session-list" class="session-list"></div>
         </aside>
 
         <section class="chat">
@@ -55,15 +155,24 @@
               <p>Human-in-the-loop responses, guidance, and escalation status</p>
             </div>
             <div class="header-controls">
-              <button class="icon">✎</button>
+              <button class="icon" id="memory-toggle" aria-label="View memory">🧠</button>
             </div>
           </div>
           <div class="pattern-switcher">
             <span class="pattern-label">Orchestration Pattern</span>
-            <div class="pattern-options" id="pattern-options">
-              <button class="pattern-btn" data-pattern="sequential">Sequential</button>
-              <button class="pattern-btn" data-pattern="fanout_fanin">Fan-out / Fan-in</button>
-              <button class="pattern-btn" data-pattern="handoff">Handoff</button>
+            <div class="pattern-options" id="pattern-options" role="radiogroup" aria-label="Select orchestration pattern">
+              <button class="pattern-btn" data-pattern="sequential" role="radio" aria-checked="true">
+                <span class="pattern-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="2" y1="8" x2="14" y2="8"/><polyline points="11,5 14,8 11,11"/></svg></span>
+                Sequential
+              </button>
+              <button class="pattern-btn" data-pattern="fanout_fanin" role="radio" aria-checked="false">
+                <span class="pattern-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="2" y1="8" x2="6" y2="8"/><line x1="6" y1="8" x2="10" y2="3"/><line x1="6" y1="8" x2="10" y2="8"/><line x1="6" y1="8" x2="10" y2="13"/><line x1="10" y1="3" x2="14" y2="8"/><line x1="10" y1="13" x2="14" y2="8"/></svg></span>
+                Fan-out / Fan-in
+              </button>
+              <button class="pattern-btn" data-pattern="handoff" role="radio" aria-checked="false">
+                <span class="pattern-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="2" y1="8" x2="14" y2="8"/><polyline points="11,5 14,8 11,11"/><path d="M14,8 Q14,2 8,2 Q2,2 2,8" fill="none" stroke-dasharray="2,2"/></svg></span>
+                Handoff
+              </button>
             </div>
           </div>
           <div class="flow-strip">
@@ -73,22 +182,40 @@
             </div>
             <div id="flow-strip-track" class="flow-strip-track"></div>
           </div>
-          <div id="chat-messages" class="chat-messages"></div>
+          <div class="chat-messages-wrapper">
+            <div id="chat-messages" class="chat-messages" role="log" aria-label="Chat messages" aria-live="polite"></div>
+            <button class="scroll-to-bottom" id="scroll-to-bottom" aria-label="Scroll to latest message">&#8595;</button>
+          </div>
           <div class="chat-input">
             <textarea
               id="chat-input"
               placeholder="Describe symptoms or request a demo case..."
               rows="2"
+              aria-label="Message input"
             ></textarea>
-            <button id="send" class="primary">Send</button>
+            <button id="send" class="primary" aria-label="Send message">Send</button>
+            <div class="send-hint hidden" id="send-hint">
+              <div class="send-hint-card">
+                <div class="send-hint-title">
+                  <span class="send-hint-icon">🔒</span>
+                  <span>Sign in to run agents and save results.</span>
+                </div>
+                <div class="send-hint-subtitle">We'll keep your message and continue after you sign in.</div>
+                <div class="send-hint-actions">
+                  <button class="primary" id="send-hint-signin">Sign in</button>
+                  <button class="ghost" id="send-hint-create">Create account</button>
+                </div>
+              </div>
+              <div class="send-hint-caret"></div>
+            </div>
           </div>
         </section>
 
-        <aside class="panel sidebar right">
+        <aside class="panel sidebar right" id="sidebar-right">
           <div class="panel-title">Artifacts & Approvals</div>
-          <div class="tabs">
-            <button class="tab active">Artifacts</button>
-            <button class="tab">Approvals</button>
+          <div class="tabs" role="tablist">
+            <button class="tab active" role="tab" aria-selected="true">Artifacts</button>
+            <button class="tab" role="tab" aria-selected="false">Approvals</button>
           </div>
 
           <div class="artifact-card empty" id="artifact-empty">
@@ -116,9 +243,9 @@
               </div>
             </div>
             <div class="artifact-actions">
-              <button class="ghost">EHR</button>
-              <button class="ghost">PDF</button>
-              <button class="ghost">Copy</button>
+              <button class="ghost" data-action="ehr">EHR</button>
+              <button class="ghost" data-action="pdf">PDF</button>
+              <button class="ghost" data-action="copy">Copy</button>
             </div>
           </div>
 
@@ -150,7 +277,7 @@
               </div>
             </div>
             <div class="artifact-actions">
-              <button class="ghost">View details</button>
+              <button class="ghost" data-action="view-details">View details</button>
             </div>
           </div>
         </aside>
@@ -165,6 +292,7 @@
         </div>
       </footer>
 
+      <!-- About Modal -->
       <div id="about-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="about-title">
         <div class="modal-backdrop"></div>
         <div class="modal-card">
@@ -186,9 +314,94 @@
           </div>
         </div>
       </div>
+
+      <!-- Settings Modal -->
+      <div id="settings-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <div class="modal-backdrop"></div>
+        <div class="modal-card settings-card">
+          <div class="modal-content">
+            <h3 id="settings-title">Settings</h3>
+            <p>Update your profile information.</p>
+            <div id="settings-message" class="settings-message"></div>
+            <form id="settings-form">
+              <div class="auth-field">
+                <label for="settings-name">Display Name</label>
+                <input id="settings-name" type="text" placeholder="Your name" />
+              </div>
+              <div class="auth-field">
+                <label for="settings-email">Email</label>
+                <input id="settings-email" type="email" placeholder="you@example.com" />
+              </div>
+              <div class="settings-actions">
+                <button type="button" class="ghost" id="settings-cancel">Cancel</button>
+                <button type="submit" class="primary">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
       <div id="toast" class="toast hidden"></div>
+
+      <div id="session-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="session-title">
+        <div class="modal-backdrop"></div>
+        <div class="modal-card session-card">
+          <div class="modal-content">
+            <h3 id="session-title">Resume your session?</h3>
+            <p>Select a recent session to resume, or start a new one.</p>
+            <div id="session-modal-list" class="session-modal-list"></div>
+            <div class="settings-actions">
+              <button class="ghost" id="session-new-btn">Start new session</button>
+              <button class="primary" id="session-resume-btn">Resume latest</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="memory-drawer" class="drawer hidden" role="dialog" aria-modal="true" aria-labelledby="memory-drawer-title">
+        <div class="drawer-backdrop"></div>
+        <div class="drawer-panel">
+          <div class="drawer-header">
+            <h3 id="memory-drawer-title">Session Memory</h3>
+            <button class="icon" id="memory-close" aria-label="Close memory">✕</button>
+          </div>
+          <div class="drawer-body">
+            <p class="drawer-hint">Rolling summary of recent interactions for this session.</p>
+            <div class="drawer-summary" id="memory-drawer-body">No summary yet.</div>
+            <div class="drawer-section">
+              <h4>Key Signals</h4>
+              <div class="drawer-tags">
+                <span class="drawer-tag">Symptoms</span>
+                <span class="drawer-tag">Risks</span>
+                <span class="drawer-tag">Constraints</span>
+              </div>
+            </div>
+            <div class="drawer-section">
+              <h4>Operational Notes</h4>
+              <p class="drawer-hint">Approvals, coverage, and coordination updates will appear here.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile tab bar -->
+      <nav class="mobile-tab-bar" id="mobile-tab-bar" aria-label="Mobile navigation">
+        <button class="active" data-tab="chat" aria-label="Chat">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 4V5z"/></svg>
+          Chat
+        </button>
+        <button data-tab="team" aria-label="Care Team">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM6 8a2 2 0 11-4 0 2 2 0 014 0zM2 17a6 6 0 0116 0H2z"/></svg>
+          Team
+        </button>
+        <button data-tab="artifacts" aria-label="Artifacts">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9zM4 5a2 2 0 012-2h1a3 3 0 006 0h1a2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5z"/></svg>
+          Artifacts
+        </button>
+      </nav>
     </div>
 
-    <script src="/ui/app.js"></script>
+    <script src="/ui/auth.js?v=20260131-8"></script>
+    <script src="/ui/app.js?v=20260131-8"></script>
   </body>
 </html>
